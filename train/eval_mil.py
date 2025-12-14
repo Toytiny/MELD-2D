@@ -139,7 +139,7 @@ if args.override_prior_alpha is not None: PRIOR_ALPHA = args.override_prior_alph
 backbone = _get("backbone", "stgcn")
 
 # ---- batch size ----
-batch_size_videos = args.batch_size_videos if args.batch_size_videos is not None else int(_get("batch_size_videos", 1))
+batch_size_videos = args.batch_size_videos if args.batch_size_videos is not None else int(_get("batch_size_videos", 8))
 
 # -------------------------
 # backbone wrappers (same as training)
