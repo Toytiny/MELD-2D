@@ -4,28 +4,10 @@
 
 This repository provides code for AI-based digital assessment of gross motor function in **Metachromatic Leukodystrophy (MLD)**. It supports two training paradigms:
 
-- **Clip-supervised** methods 
-- **Multiple Instance Learning (MIL)** based methods 
+- **Clip-supervised** methods (confidence-based soft voting and max voting)
+- **Multiple Instance Learning (MIL)** based methods (ordinal Noisy-OR pooling and log-exp-sum pooling) 
 
----
-
-## Table of Contents
-
-- [Installation](#installation)
-- [Data layout and description](#data-layout-and-description)
-- [Pre-trained models and results](#pre-trained-models-and-results)
-- [Run inference (evaluation)](#run-inference-evaluation)
-- [Train from scratch](#train-from-scratch)
-- [Project structure](#project-structure)
-- [Advanced usage](#advanced-usage)
-- [System requirements](#system-requirements)
-- [Troubleshooting](#troubleshooting)
-- [Contributing](#contributing)
-- [Citation](#citation)
-- [License](#license)
-- [Contact](#contact)
-- [Acknowledgments](#acknowledgments)
-- [Changelog](#changelog)
+We also provide the first video-based MLD dataset with expert-annotated GMFC-MLD scores and extracted 2D skeleton sequences.
 
 ---
 
@@ -103,52 +85,51 @@ data/
 
 ---
 
-## Pre-trained models and results
+## Using our trained weights (inference)
 
-Experiments (checkpoints/logs/metrics) are saved under an experiment directory, typically one of:
+All experiment artifacts (checkpoints/args) are stored under:
 
-- `results/<EXP_NAME>/` (common for repo-root runs), or
-- `train/results/<EXP_NAME>/` (if your workflow uses `train/` as a workspace)
+```text
+train/results/<EXP_NAME>/
+```
 
 Each experiment folder typically contains:
-- model weights (e.g., `best_model.pth`, `final_model.pth`)
-- checkpoints
-- logs
-- saved args/config
-- evaluation outputs (predictions/metrics)
+- `args.json`: the exact configuration/arguments used for the run
+- checkpoints / model weights (e.g., `bestEMA_acc_original_setup_rep*.pth`)
+- training logs (if enabled)
+- evaluation outputs (predictions/metrics, if generated)
 
-Example experiment name:
+Our experiment names:
+- `clip_stgcn_cp_max`
+- `clip_stgcn_cp_soft`
 - `exp_stgcn_cp_noo_1_full`
+- `exp_stgcn_cp_lse_10_full`
 
-> If your local setup stores results elsewhere (e.g., an absolute path on a cluster), keep it consistent across training and evaluation.
+> Tip: keep the `train/results/<EXP_NAME>/` directory intact. Evaluation scripts load both the checkpoint(s) and `args.json` from this folder.
 
----
+### Run inference (evaluation)
 
-## Run inference (evaluation)
-
-### MIL evaluation
-
-Evaluate a trained MIL experiment on a split:
-
+**MIL (video-based)**
 ```bash
 python eval_mil.py --exp-name <EXP_NAME> --splits test
 ```
 
 Example:
-
 ```bash
 python eval_mil.py --exp-name exp_stgcn_cp_noo_1_full --splits test
 ```
 
-### Clip-supervised evaluation
-
-Evaluate a trained clip-supervised experiment (if applicable in your setup):
-
+**Clip-supervised (clip-based)**
 ```bash
 python eval_clip.py --exp-name <EXP_NAME> --splits test
 ```
 
-> Use `-h` to see all options:
+Example:
+```bash
+python eval_clip.py --exp-name clip_stgcn_cp_max --splits test
+```
+
+See all options:
 ```bash
 python eval_mil.py -h
 python eval_clip.py -h
@@ -156,9 +137,9 @@ python eval_clip.py -h
 
 ---
 
-## Train from scratch
+## Train your own models
 
-### Train MIL
+### Train MIL (video-based)
 
 ```bash
 python train_mil.py \
@@ -171,7 +152,6 @@ python train_mil.py \
 ```
 
 Example:
-
 ```bash
 python train_mil.py \
   --setup-list original_setup \
@@ -182,147 +162,23 @@ python train_mil.py \
   --exp-name exp_stgcn_cp_noo_1_full_new
 ```
 
-### Train clip-supervised (optional)
+### Train clip-supervised (clip-based)
 
 ```bash
 python train_clip.py --setup-list original_setup --epochs 200 --exp-name <EXP_NAME>
 ```
 
-> Use `-h` for the authoritative list of supported flags:
+Example:
+```bash
+python train_clip.py --setup-list original_setup --epochs 200 --exp-name clip_stgcn_cp_max_new
+```
+
+> Use `-h` for the full list of flags:
 ```bash
 python train_mil.py -h
 python train_clip.py -h
 ```
 
----
-
-## Project structure
-
-```text
-Takeda-MIT-MLD/
-├── data/
-│   ├── new_takeda_processed_coco_merged_ls_flt/
-│   ├── new_takeda_processed_coco_merged_video/
-│   └── split_info_new/
-├── models/                       # model architectures (e.g., ST-GCN, heads)
-├── utils/                        # shared utilities
-├── train/                        # optional workspace (may contain scripts/artifacts depending on setup)
-├── results/                      # generated after training/evaluation (if configured)
-├── weights/                      # optional pretrained weights
-├── augmentation.py               # augmentation utilities
-├── dataset.py                    # frame/clip dataset loader (if used)
-├── dataset_mil.py                # MIL dataset loader
-├── mil_utils.py                  # pooling/metrics helpers
-├── train_mil.py                  # MIL training entry
-├── eval_mil.py                   # MIL evaluation entry
-├── train_clip.py                 # clip-supervised training entry
-├── eval_clip.py                  # clip-supervised evaluation entry
-├── environment.yml
-├── requirements.txt
-└── README.md
-```
-
----
-
-## Advanced usage
-
-### Resume training from a checkpoint
-
-If your training script supports resuming, a common pattern is:
-
-```bash
-python train_mil.py \
-  --setup-list original_setup \
-  --use-cp True \
-  --epochs 400 \
-  --pool-mode noisy_or_ord \
-  --tau 1 \
-  --exp-name <EXP_NAME> \
-  --resume-from-checkpoint <PATH_TO_CHECKPOINT>
-```
-
-Example:
-
-```bash
-python train_mil.py \
-  --setup-list original_setup \
-  --use-cp True \
-  --epochs 400 \
-  --pool-mode noisy_or_ord \
-  --tau 1 \
-  --exp-name exp_stgcn_cp_noo_1_full_new \
-  --resume-from-checkpoint results/exp_stgcn_cp_noo_1_full_new/best_model.pth
-```
-
-> Please verify the exact flag names with `python train_mil.py -h`.
-
-### Batch evaluate multiple experiments
-
-```bash
-#!/bin/bash
-set -e
-
-for exp in exp_stgcn_cp_noo_1_full exp_other_example; do
-  python eval_mil.py --exp-name "$exp" --splits test
-done
-```
-
----
-
-## System requirements
-
-Recommended:
-- Linux
-- NVIDIA GPU (CUDA-capable)
-- Python version consistent with `environment.yml`
-- 16+ GB RAM
-- Sufficient disk space for data + experiment outputs
-
-CPU-only may work for limited evaluation, but training will be slow.
-
----
-
-## Troubleshooting
-
-### Data not found
-
-Verify the folder layout and split files:
-
-```bash
-ls -la data/new_takeda_processed_coco_merged_video/train/
-ls -la data/split_info_new/original_setup/
-```
-
-### CUDA / PyTorch mismatch
-
-Prefer Conda installation and verify CUDA works:
-
-```bash
-nvidia-smi
-python -c "import torch; print(torch.cuda.is_available()); print(torch.__version__)"
-```
-
-### Out-of-memory (OOM)
-
-Try reducing:
-- batch size
-- clip length / number of frames
-- MIL bag size / number of instances per bag
-
----
-
-## Contributing
-
-We welcome contributions.
-
-1. Fork the repository and create a feature branch:
-   ```bash
-   git checkout -b feature/description
-   ```
-2. Commit changes with clear messages.
-3. Push and open a Pull Request with a concise description (and tests if applicable).
-
-Please open GitHub issues for bug reports and feature requests.
 
 ---
 
@@ -343,10 +199,10 @@ If you use this project in research, please cite:
 
 ## License
 
-- Code and documentation: **CC BY-NC 4.0** (unless otherwise noted)
-- Data: not distributed; subject to clinical data governance and any Takeda/institutional agreements
+- **Code and documentation:** **CC BY-NC 4.0** (unless otherwise noted)
+- **Skeleton data (in this repository):** released for **research and non-commercial use only**, subject to any underlying clinical data governance and institutional/Takeda agreements.
 
-> Consider adding a `LICENSE` file to the repository root to make the license explicit.
+> Please make sure your use and any redistribution comply with the applicable data use agreement. Consider adding a `LICENSE` (and/or a dedicated `DATA_LICENSE`) file at the repository root to make these terms explicit.
 
 ---
 
@@ -363,15 +219,6 @@ For questions or issues, please open a GitHub issue.
 ## Acknowledgments
 
 Thanks to MIT and Takeda for support, and to all contributors.
-
----
-
-## Changelog
-
-### v1.0 (2025-12-13)
-- Initial public release
-- Support for MIL training and evaluation
-- Support for clip-supervised training/evaluation
 
 ---
 
