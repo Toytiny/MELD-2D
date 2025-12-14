@@ -13,36 +13,32 @@ We also provide the first video-based MLD dataset with expert-annotated GMFC-MLD
 
 ## Installation
 
-Two installation options are provided: **Conda (recommended)** and **pip**.
+We recommend **Conda** for reproducibility and to avoid PyTorch/CUDA version mismatches.
 
-### Option 1 — Conda (recommended)
+### Option — Conda (recommended)
 
 ```bash
 # Clone repository
 git clone https://github.com/Toytiny/Takeda-MIT-MLD.git
 cd Takeda-MIT-MLD
 
-# Create conda environment from provided file
-conda env create -f environment.yml
-
-# Activate environment
+# Create environment (recommended Python version)
+conda create -n takeda python=3.10 -y
 conda activate takeda
+
+# Install PyTorch + CUDA 11.7 (GPU)
+conda install -y pytorch==2.0.1 torchvision==0.15.2 torchaudio==2.0.2 pytorch-cuda=11.7 -c pytorch -c nvidia
+
+# Install remaining dependencies (torch is handled by conda above)
+pip install -r requirements.txt
+
 ```
 
-### Option 2 — pip
+###  Qucik sanity check
 
 ```bash
-# Clone repository
-git clone https://github.com/Toytiny/Takeda-MIT-MLD.git
-cd Takeda-MIT-MLD
-
-# Install pip requirements
-pip install -r requirements.txt
+python -c "import torch; print('torch:', torch.__version__); print('cuda:', torch.cuda.is_available())"
 ```
-
-Notes:
-- `environment.yml` is recommended for reproducibility and to avoid CUDA/PyTorch mismatch issues.
-- If you install via pip, ensure `torch/torchvision/torchaudio` match your CUDA driver/runtime.
 
 ---
 
