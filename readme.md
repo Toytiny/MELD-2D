@@ -19,8 +19,8 @@ We recommend **Conda** for reproducibility and to avoid PyTorch/CUDA version mis
 
 ```bash
 # Clone repository
-git clone https://github.com/Toytiny/Takeda-MIT-MLD.git
-cd Takeda-MIT-MLD
+git clone https://github.com/Toytiny/MELD-2D.git
+cd MELD-2D
 
 # Create environment (recommended Python version)
 conda create -n takeda python=3.10 -y
@@ -183,11 +183,11 @@ python train_clip.py -h
 If you use this project in research, please cite:
 
 ```bibtex
-@article{takeda_mit_mld_2024,
+@article{meld_2d_2026,
   title={AI-Based Digital Assessment of Gross Motor Function in Metachromatic Leukodystrophy},
   author={[Authors]},
   journal={[Journal]},
-  year={2024}
+  year={2025}
 }
 ```
 
